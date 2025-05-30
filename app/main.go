@@ -1,135 +1,38 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
 	"net"
-	"os"
-	"strings"
-	"time"
 )
 
-// Ensures gofmt doesn't remove the "net" and "os" imports above (feel free to remove this!)
-var _ = net.Listen
-var _ = os.Exit
+func handleConnection(conn net.Conn) {
+	defer conn.Close() // Always clean up when done
+
+	// Your existing parsing logic goes here
+	// Read request, parse headers, send response
+
+	fmt.Printf("🏁 Connection handled\n")
+}
 
 func main() {
-	// // You can use print statements as follows for debugging, they'll be visible when running tests.
-	// fmt.Println("Logs from your program will appear here!")
-
-	// Uncomment this block to pass the first stage
-	//
-	l, err := net.Listen("tcp", "0.0.0.0:4221")
+	listener, err := net.Listen("tcp", ":4221")
 	if err != nil {
-		fmt.Println("Failed to bind to port 4221")
-		os.Exit(1)
+		panic(err)
 	}
+	defer listener.Close()
 
-	conn, err := l.Accept()
-	if err != nil {
-		fmt.Println("Error accepting connection: ", err.Error())
-		os.Exit(1)
+	fmt.Printf("🚀 Server listening on :4221\n")
 
-	}
-
-	time.Sleep(100 * time.Millisecond)
-	defer conn.Close()
-
-	reader := bufio.NewReader(conn)
-
-	requestLine, _, err := reader.ReadLine()
-	if err != nil {
-		fmt.Print("error reading request line: ", err.Error())
-		return
-	}
-	parts := strings.Split(string(requestLine), " ")
-	if len(parts) >= 3 {
-		method := parts[0]      // "GET"
-		url := parts[1]         // "/hello"
-		httpVersion := parts[2] // "HTTP/1.1"
-
-		fmt.Printf("Method: %s\n", method)
-		fmt.Printf("URL: %s\n", url)
-		fmt.Printf("HTTP Version: %s\n", httpVersion)
-
-		// Check if URL is valid first
-		if url == "" || url == " " {
-			// Send error response for invalid URLs
-			response := "HTTP/1.1 400 Bad Request\r\n\r\n"
-			_, err = conn.Write([]byte(response))
-			if err != nil {
-				fmt.Println("Error writing error response:", err.Error())
-				os.Exit(1)
-			}
-		} else if url == "/" {
-			// Root path - return 200 OK
-			response := "HTTP/1.1 200 OK\r\n\r\n"
-			_, err = conn.Write([]byte(response))
-			if err != nil {
-				fmt.Println("Error writing response:", err.Error())
-				os.Exit(1)
-			}
-		} else if strings.HasPrefix(url, "/echo/") {
-			// Dynamic echo path - extract the parameter
-			// url = "/echo/hello" -> parameter = "hello"
-			parameter := strings.TrimPrefix(url, "/echo/")
-
-			// Create response with the dynamic parameter
-			responseBody := parameter
-			contentLength := len(responseBody)
-			response := fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: %d\r\n\r\n%s",
-				contentLength, responseBody)
-
-			_, err = conn.Write([]byte(response))
-			if err != nil {
-				fmt.Println("Error writing echo response:", err.Error())
-				os.Exit(1)
-			}
-		} else if url == "/user-agent" {
-			// Read HTTP headers to find User-Agent
-			userAgent := ""
-
-			// Read remaining headers line by line
-			for {
-				headerLine, _, err := reader.ReadLine()
-				if err != nil {
-					break
-				}
-
-				// Empty line means end of headers
-				if len(headerLine) == 0 {
-					break
-				}
-
-				// Check if this is the User-Agent header
-				headerStr := string(headerLine)
-				if strings.HasPrefix(strings.ToLower(headerStr), "user-agent:") {
-					// Extract the value after "User-Agent: "
-					userAgent = strings.TrimSpace(headerStr[len("user-agent:"):])
-					break
-				}
-			}
-
-			// Create response with the User-Agent value
-			responseBody := userAgent
-			contentLength := len(responseBody)
-			response := fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: %d\r\n\r\n%s",
-				contentLength, responseBody)
-
-			_, err = conn.Write([]byte(response))
-			if err != nil {
-				fmt.Println("Error writing user-agent response:", err.Error())
-				os.Exit(1)
-			}
-		} else {
-			// Any other path - return 404 Not Found
-			response := "HTTP/1.1 404 Not Found\r\n\r\n"
-			_, err = conn.Write([]byte(response))
-			if err != nil {
-				fmt.Println("Error writing 404 response:", err.Error())
-				os.Exit(1)
-			}
+	for {
+		conn, err := listener.Accept()
+		if err != nil {
+			fmt.Printf("❌ Accept error: %v\n", err)
+			continue
 		}
-	}
 
+		fmt.Printf("📞 New connection accepted\n")
+
+		// The magic line - handle each connection concurrently
+		go handleConnection(conn)
+	}
 }
