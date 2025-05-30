@@ -85,6 +85,42 @@ func main() {
 				fmt.Println("Error writing echo response:", err.Error())
 				os.Exit(1)
 			}
+		} else if url == "/user-agent" {
+			// Read HTTP headers to find User-Agent
+			userAgent := ""
+
+			// Read remaining headers line by line
+			for {
+				headerLine, _, err := reader.ReadLine()
+				if err != nil {
+					break
+				}
+
+				// Empty line means end of headers
+				if len(headerLine) == 0 {
+					break
+				}
+
+				// Check if this is the User-Agent header
+				headerStr := string(headerLine)
+				if strings.HasPrefix(strings.ToLower(headerStr), "user-agent:") {
+					// Extract the value after "User-Agent: "
+					userAgent = strings.TrimSpace(headerStr[len("user-agent:"):])
+					break
+				}
+			}
+
+			// Create response with the User-Agent value
+			responseBody := userAgent
+			contentLength := len(responseBody)
+			response := fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: %d\r\n\r\n%s",
+				contentLength, responseBody)
+
+			_, err = conn.Write([]byte(response))
+			if err != nil {
+				fmt.Println("Error writing user-agent response:", err.Error())
+				os.Exit(1)
+			}
 		} else {
 			// Any other path - return 404 Not Found
 			response := "HTTP/1.1 404 Not Found\r\n\r\n"
