@@ -69,6 +69,22 @@ func main() {
 				fmt.Println("Error writing response:", err.Error())
 				os.Exit(1)
 			}
+		} else if strings.HasPrefix(url, "/echo/") {
+			// Dynamic echo path - extract the parameter
+			// url = "/echo/hello" -> parameter = "hello"
+			parameter := strings.TrimPrefix(url, "/echo/")
+
+			// Create response with the dynamic parameter
+			responseBody := parameter
+			contentLength := len(responseBody)
+			response := fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: %d\r\n\r\n%s",
+				contentLength, responseBody)
+
+			_, err = conn.Write([]byte(response))
+			if err != nil {
+				fmt.Println("Error writing echo response:", err.Error())
+				os.Exit(1)
+			}
 		} else {
 			// Any other path - return 404 Not Found
 			response := "HTTP/1.1 404 Not Found\r\n\r\n"
