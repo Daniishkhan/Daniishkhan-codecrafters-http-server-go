@@ -52,8 +52,17 @@ func main() {
 		fmt.Printf("URL: %s\n", url)
 		fmt.Printf("HTTP Version: %s\n", httpVersion)
 
-		// Check if we have a valid URL (not empty or just a space)
-		if url != "" && url != " " {
+		// Check if URL is valid first
+		if url == "" || url == " " {
+			// Send error response for invalid URLs
+			response := "HTTP/1.1 400 Bad Request\r\n\r\n"
+			_, err = conn.Write([]byte(response))
+			if err != nil {
+				fmt.Println("Error writing error response:", err.Error())
+				os.Exit(1)
+			}
+		} else if url == "/" {
+			// Root path - return 200 OK
 			response := "HTTP/1.1 200 OK\r\n\r\n"
 			_, err = conn.Write([]byte(response))
 			if err != nil {
@@ -61,11 +70,11 @@ func main() {
 				os.Exit(1)
 			}
 		} else {
-			// Send error response for invalid URLs
-			response2 := "HTTP/1.1 400 Bad Request\r\n\r\n"
-			_, err = conn.Write([]byte(response2))
+			// Any other path - return 404 Not Found
+			response := "HTTP/1.1 404 Not Found\r\n\r\n"
+			_, err = conn.Write([]byte(response))
 			if err != nil {
-				fmt.Println("Error writing error response:", err.Error())
+				fmt.Println("Error writing 404 response:", err.Error())
 				os.Exit(1)
 			}
 		}
