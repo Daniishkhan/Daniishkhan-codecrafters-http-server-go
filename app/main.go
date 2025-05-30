@@ -13,7 +13,30 @@ func handleConnection(conn net.Conn) {
 
 	fmt.Printf("🏁 Connection handled\n")
 }
-
+apackage main
+import (
+	"fmt"
+	"net"
+	"os"
+	"strings"
+)
+func main() {
+	l, err := net.Listen("tcp", "0.0.0.0:4221")
+	if err != nil {
+		fmt.Println("Failed to bind to port 4221")
+		os.Exit(1)
+	}
+	fmt.Printf("Server listening on port 4221\n")
+	for {
+		conn, err := l.Accept()
+		if err != nil {
+			fmt.Println("Error accepting connection: ", err.Error())
+			os.Exit(1)
+		}
+		// start a goroutine to handle the new connection
+		go handleRequest(conn)
+	}
+}
 func main() {
 	listener, err := net.Listen("tcp", ":4221")
 	if err != nil {
