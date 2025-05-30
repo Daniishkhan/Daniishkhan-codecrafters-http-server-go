@@ -6,7 +6,7 @@ import (
 )
 
 func handleConnection(conn net.Conn) {
-	defer conn.Close() // Always clean up when done
+	// defer conn.Close() // Always clean up when done
 
 	// Your existing parsing logic goes here
 	// Read request, parse headers, send response
